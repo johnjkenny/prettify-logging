@@ -6,7 +6,7 @@
 
 
 __author__ = 'John J Kenny'
-__version__ = '1.0.1'
+__version__ = '1.0.2'
 
 
 from logging import CRITICAL, DEBUG, ERROR, INFO, WARNING, FileHandler, Formatter, LogRecord, StreamHandler, getLogger
