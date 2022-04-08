@@ -10,23 +10,30 @@ __version__ = '1.0.0'
 
 
 from time import gmtime
-from logging import getLogger, StreamHandler, FileHandler, Formatter, DEBUG, INFO, WARNING, ERROR, CRITICAL
+from logging import LogRecord, getLogger, StreamHandler, FileHandler, Formatter, DEBUG, INFO, WARNING, ERROR, CRITICAL
 
 from ColorFi.color_fi import ColorFi
 
 
 class TemplateFormatter(Formatter):
+    """Template formatter for the logging module. Inherits from the Formatter class in the logging module."""
     def __init__(self):
+        """Initializes the formatter."""
         super().__init__()
-        self.time_zone = str()
+        self.set_utc = True
         self.format_display = dict()
-        
-    def _time_zone_converter(self):
-        if self.time_zone.upper() == 'UTC':
+
+    def _format_entry(self, entry: LogRecord):
+        """A helper function that formats the log entry.
+
+        Args:
+            entry (LogRecord): The log record to be formatted.
+
+        Returns:
+            str: The formatted log record.
+        """
+        if self.set_utc:
             Formatter.converter = gmtime
-            
-    def _format_entry(self, entry):
-        self._time_zone_converter()
         format_original = self._style._fmt
         if entry.levelno == DEBUG:
             self._style._fmt = self.format_display['debug']
@@ -44,35 +51,94 @@ class TemplateFormatter(Formatter):
 
 
 class FileFormatter(TemplateFormatter):
-    def __init__(self, file_format: str, time_zone: str):
+    """Log File Formatter. Inherits from TemplateFormatter."""
+    def __init__(self, file_format: dict, set_utc: bool = True):
+        """Initializes file formatter.
+
+        Args:
+            file_format (dict): dictionary of format strings of log levels for the log file.
+            set_utc (bool): Set time entry in log to UTC. Default is True.
+        """
         super().__init__()
         self.format_display = file_format
-        self.time_zone = time_zone
-    
-    def format(self, entry):
-        return self._format_entry(entry)
-        
+        self.set_utc = set_utc
+
+    def format(self, record: LogRecord):
+        """Formats the log record.
+
+        Args:
+            record (LogRecord): The log record to be formatted.
+        Returns:
+            str: The formatted log record.
+        """
+        return self._format_entry(record)
+
 
 class StreamFormatter(TemplateFormatter):
-    def __init__(self, stream_format: str, time_zone: str):
+    """Log Stream Formatter. Inherits from TemplateFormatter."""
+    def __init__(self, stream_format: dict, set_utc: bool = True):
+        """Initializes stream formatter.
+
+        Args:
+            stream_format (dict): dictionary of format strings of log levels for the log stream.
+            set_utc (bool): Set time entry in log to UTC. Default is True.
+        """
         super().__init__()
         self.format_display = stream_format
-        self.time_zone = time_zone
-    
-    def format(self, entry):
-        return self._format_entry(entry)
+        self.set_utc = set_utc
+
+    def format(self, record: LogRecord):
+        """Formats the log record.
+
+        Args:
+            record (LogRecord): The log record to be formatted.
+        Returns:
+            str: The formatted log record.
+        """
+        return self._format_entry(record)
 
 
 class PrettifyLogging(ColorFi):
+    """Sets user log settings for the stream and file handlers. Inherits from ColorFi to help color log streams."""
     def __init__(self, **kwargs: dict):
+        """Initializes the PrettifyLogging class.
+
+        kwargs options:
+
+        key: name = (str) [Required]. Name of the log file to be created. Example: 'my_log_file.log'
+
+        key: level = (str) Log level to log records. Default is 'error'. Example: 'debug'
+
+        key: set_utc = (bool) Set time entry in log to UTC. Default is True.
+
+        key: default_format = (str) Default log record formatting. Default is:\n
+            [%(asctime)s] - %(name)s - %(levelname)s - (%(module)s, %(funcName)s, %(lineno)d): %(message)s
+
+        key: stream_format = (str) Log record formatting. Default is default_format. Example:\n
+            %(asctime)s - %(name)s - %(levelname)s - %(message)s
+
+        key: file_format = (str) Log record formatting. Default is default_format. Example:\n
+            %(asctime)s - %(name)s - %(levelname)s - %(message)s
+
+        key: debug_display  = (str, tuple): Debug stream formatting. Default is "bright-black".
+
+        key: info_display  = (str, tuple): Info stream formatting. Default is "blue".
+
+        key: warning_display = (str, tuple): Warning stream formatting. Default is "yellow".
+
+        key: error_display  = (str, tuple): Error stream formatting. Default is "bright-red".
+
+        key: critical_display  = (str, tuple): Critical stream formatting. Default is ('red', 'invert').
+        """
         super().__init__()
         self.log = None
-        default = '[%(asctime)s] - %(name)s - %(levelname)s - (%(module)s, %(funcName)s, %(lineno)d): %(message)s'
         self.name = kwargs['name'] if 'name' in kwargs else None
         self.level = kwargs['level'] if 'level' in kwargs else 'error'
-        self.time_zone = kwargs['time_zone'] if 'time_zone' in kwargs else 'UTC'
-        self.stream_format = kwargs['stream_format'] if 'stream_format' in kwargs else default
-        self.file_format = kwargs['file_format'] if 'file_format' in kwargs else default
+        self.set_utc = kwargs['set_utc'] if 'set_utc' in kwargs else True
+        self.default_format = (
+            '[%(asctime)s] - %(name)s - %(levelname)s - (%(module)s, %(funcName)s, %(lineno)d): %(message)s')
+        self.stream_format = kwargs['stream_format'] if 'stream_format' in kwargs else self.default_format
+        self.file_format = kwargs['file_format'] if 'file_format' in kwargs else self.default_format
         self.debug_display = kwargs['debug_display'] if 'debug_display' in kwargs else 'bright-black'
         self.info_display = kwargs['info_display'] if 'info_display' in kwargs else 'blue'
         self.warning_display = kwargs['warning_display'] if 'warning_display' in kwargs else 'yellow'
@@ -80,39 +146,65 @@ class PrettifyLogging(ColorFi):
         self.critical_display = kwargs['critical_display'] if 'critical_display' in kwargs else ('red', 'invert')
 
     def configure(self):
+        """configure creates the logger and sets the log settings for the stream and file handlers.
+
+        Returns:
+            (Logger): the logger object.
+        """
         if self.name is not None:
             self.log = getLogger(self.name)
             self.log.setLevel(self._log_level_mapping(self.level.lower()))
             for config_type in ('stream', 'file'):
                 self._set_config(config_type)
             return self.log
-        else:
-            self.print_message('No name specified for logger.', 'red')
-    
+        self.print_message('No name specified for logger.', 'red')
+        return None
+
     def _set_config(self, config_type: str):
+        """_set_config sets the log settings for the stream and file handlers.
+
+        Args:
+            config_type (str): 'stream' or 'file'.
+        """
         format_dict = self._create_format_dict(config_type)
         if format_dict:
             if config_type == 'stream':
                 handler = StreamHandler()
-                formatter = StreamFormatter(format_dict, self.time_zone)
+                formatter = StreamFormatter(format_dict, self.set_utc)
             elif config_type == 'file':
                 handler = FileHandler(self.name, mode='a+')
-                formatter = FileFormatter(format_dict, self.time_zone)
+                formatter = FileFormatter(format_dict, self.set_utc)
             handler.setFormatter(formatter)
             self.log.addHandler(handler)
-        
+
     def _create_format_dict(self, config_type: str):
+        """_create_format_dict creates the format dictionary for the stream and file handlers.
+
+        Args:
+            config_type (str): 'stream' or 'file'.
+
+        Returns:
+            dict: dictionary of format strings for the stream and file handlers.
+        """
         if config_type == 'stream':
             return {'debug': self._unpack_stream_config(self.debug_display, 'debug'),
                     'info': self._unpack_stream_config(self.info_display, 'info'),
                     'warning': self._unpack_stream_config(self.warning_display, 'warning'),
                     'error': self._unpack_stream_config(self.error_display, 'error'),
                     'critical': self._unpack_stream_config(self.critical_display, 'critical')}
-        elif config_type == 'file':
-            return {'debug': self.file_format, 'info': self.file_format, 'warning': self.file_format,
-                    'error': self.file_format, 'critical': self.file_format}
-            
+        return {'debug': self.file_format, 'info': self.file_format, 'warning': self.file_format,
+                'error': self.file_format, 'critical': self.file_format}
+
     def _unpack_stream_config(self, display_config, level: str):
+        """_unpack_stream_config unpacks the stream config and creates the formatting.
+
+        Args:
+            display_config (str or tuple): The stream config.
+            level (str): The log level.
+
+        Returns:
+            str or None: The formatted stream config or None if the config is not valid.
+        """
         color = None
         ground = 'foreground'
         formatting = 'default'
@@ -129,20 +221,31 @@ class PrettifyLogging(ColorFi):
                     formatting = item
         if color:
             return self.format_message(self.stream_format, color, ground, formatting)
-        else:
-            self.print_message('Invalid stream display config for {} level: {}.\nAvailable Options:'.format(
-                level,display_config), 'red')
-            self.display_key_options()
+        self.print_message('Invalid stream display config for {} level: {}.\nAvailable Options:'.format(
+            level, display_config), 'red')
+        self.display_key_options()
+        return None
 
     def _log_level_mapping(self, level: str):
+        """_log_level_mapping maps the log level to the logging module level.
+
+        Args:
+            level (str): The log level.
+
+        Returns:
+            int or None: The logging module level or None if the level is not valid.
+        """
         log_levels = {'debug': DEBUG, 'info': INFO, 'warning': WARNING, 'error': ERROR, 'critical': CRITICAL}
         try:
             return log_levels[level]
         except KeyError:
             self.print_message('Unknown log level "{}". Options: {}'.format(level, ", ".join(
                 list(log_levels.keys()))), 'red')
-            
+
     def display_test(self):
+        """display_test creates a test entry for all log levels to verify the settings are to the users liking.
+        Be sure to set the log level to 'debug' when initializing PrettifyLogging to see all log level entries. 
+        """
         self.log.debug('Debug message test')
         self.log.info('Info message test')
         self.log.warning('Warning message test')
@@ -151,8 +254,10 @@ class PrettifyLogging(ColorFi):
 
 
 if __name__ == '__main__':
-    pretty_logging = PrettifyLogging(name='test.log', level='debug')
-    pretty_logging.debug_display = 'green'
-    pretty_logging.info_display = ('magenta', 'bold', 'foreground')
-    log = pretty_logging.configure()
-    pretty_logging.display_test()
+    PRETTY_LOGGING = PrettifyLogging(name='test.log', level='debug')
+    PRETTY_LOGGING.debug_display = 'green'
+    PRETTY_LOGGING.info_display = ('magenta', 'bold', 'foreground')
+    PRETTY_LOGGING.configure()
+    PRETTY_LOGGING.display_test()
+    
+    PRETTY_LOGGING.print_message('Test complete.', 'green')
