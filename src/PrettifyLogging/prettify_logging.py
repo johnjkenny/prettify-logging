@@ -6,11 +6,11 @@
 
 
 __author__ = 'John J Kenny'
-__version__ = '1.0.0'
+__version__ = '1.0.1'
 
 
+from logging import CRITICAL, DEBUG, ERROR, INFO, WARNING, FileHandler, Formatter, LogRecord, StreamHandler, getLogger
 from time import gmtime
-from logging import LogRecord, getLogger, StreamHandler, FileHandler, Formatter, DEBUG, INFO, WARNING, ERROR, CRITICAL
 
 from ColorFi.color_fi import ColorFi
 
