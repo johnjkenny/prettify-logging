@@ -8,7 +8,7 @@ Prettify-Logging is a python package which can be found on [Python Package Index
 pip install prettify-logging
 ```
 
-## Import Prettify-Logging into your projects
+## Import Prettify-Logging Into Your Projects
 ``` python
 from PrettifyLogging.prettify_logging import PrettifyLogging
 ```
