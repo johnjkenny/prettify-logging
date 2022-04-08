@@ -244,20 +244,10 @@ class PrettifyLogging(ColorFi):
 
     def display_test(self):
         """display_test creates a test entry for all log levels to verify the settings are to the users liking.
-        Be sure to set the log level to 'debug' when initializing PrettifyLogging to see all log level entries. 
+        Be sure to set the log level to 'debug' when initializing PrettifyLogging to see all log level entries.
         """
         self.log.debug('Debug message test')
         self.log.info('Info message test')
         self.log.warning('Warning message test')
         self.log.error('Error message test')
         self.log.critical('Critical message test')
-
-
-if __name__ == '__main__':
-    PRETTY_LOGGING = PrettifyLogging(name='test.log', level='debug')
-    PRETTY_LOGGING.debug_display = 'green'
-    PRETTY_LOGGING.info_display = ('magenta', 'bold', 'foreground')
-    PRETTY_LOGGING.configure()
-    PRETTY_LOGGING.display_test()
-    
-    PRETTY_LOGGING.print_message('Test complete.', 'green')
