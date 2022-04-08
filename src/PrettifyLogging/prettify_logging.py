@@ -135,7 +135,7 @@ class PrettifyLogging(ColorFi):
         self.name = kwargs['name'] if 'name' in kwargs else None
         self.level = kwargs['level'] if 'level' in kwargs else 'error'
         self.set_utc = kwargs['set_utc'] if 'set_utc' in kwargs else True
-        self.default_format = (
+        self.default_format = kwargs['default_format'] if 'default_format' in kwargs else (
             '[%(asctime)s] - %(name)s - %(levelname)s - (%(module)s, %(funcName)s, %(lineno)d): %(message)s')
         self.stream_format = kwargs['stream_format'] if 'stream_format' in kwargs else self.default_format
         self.file_format = kwargs['file_format'] if 'file_format' in kwargs else self.default_format
